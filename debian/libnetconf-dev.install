@@ -1,0 +1,9 @@
+usr/include/libnetconf*.h
+usr/include/libnetconf/*
+usr/lib/*/libnetconf.so
+usr/lib/*/libnetconf.a
+usr/lib/*/pkgconfig/libnetconf.pc
+usr/bin/lnctool
+usr/share/libnetconf/templates/*
+usr/share/libnetconf/rnglib/*
+usr/share/libnetconf/xslt/*

@@ -1,0 +1,10 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -299,7 +299,6 @@
+ 	$(INSTALL) -m 775 -d $(DESTDIR)/$(libdir)
+ 	$(LIBTOOL) --mode=install cp $(NAME).la $(DESTDIR)/$(libdir)
+ 	$(LIBTOOL) --mode=finish $(DESTDIR)/$(libdir)
+-	@if test "`id -u`" = "0"; then $(LDCONFIG); fi
+ 	[ -d "$(NC_WORKINGDIR_PATH)" ] || \
+ 		mkdir -p $(NC_WORKINGDIR_PATH)
+ 	chmod 700 $(NC_WORKINGDIR_PATH)

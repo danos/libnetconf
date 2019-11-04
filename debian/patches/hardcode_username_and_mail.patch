@@ -1,0 +1,30 @@
+--- a/configure.in
++++ b/configure.in
+@@ -49,23 +49,13 @@
+ LIBTOOL_VERSION_INFO=`echo ${PACKAGE_VERSION} | sed -e 's/\./:/g' `
+ AC_SUBST(LIBTOOL_VERSION_INFO)
+ 
+-if test -n "`git branch | grep '\* *master'`"; then
+-	RELEASE_TAG="_trunk"
+-fi
+-RELEASE="`git log | grep '^commit' | sed "/$(git log | grep -B 4 -m 1 "VERSION: bump to" | grep ^commit)/q" | wc -l`$RELEASE_TAG"
+-if test -z "${RELEASE}"; then
+-	RELEASE=1
+-fi
++RELEASE=`cut -f1 ./VERSION | tr -d '\n'`
+ AC_SUBST(RELEASE)
+ 
+-if test "`git show > /dev/null 2>&1;echo $?`" = "0"; then
+-        CPPFLAGS="$CPPFLAGS -DRCSID=\\\"\$(IDGIT)\\\""
+-else
+-        CPPFLAGS="$CPPFLAGS -DRCSID=\\\"\$(IDNOGIT)\\\""
+-fi
++CPPFLAGS="$CPPFLAGS -DRCSID=\\\"\$(IDNOGIT)\\\""
+ 
+-USERNAME=`git config --get user.name`
+-USERMAIL=`git config --get user.email`
++USERNAME="Vyatta Package Maintainers"
++USERMAIL="DL-vyatta-help@att.com"
+ AC_SUBST(USERNAME)
+ AC_SUBST(USERMAIL)
+ 

@@ -1,0 +1,114 @@
+--- a/src/session.c
++++ b/src/session.c
+@@ -45,7 +45,6 @@
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+-#include <sys/mman.h>
+ #include <dirent.h>
+ #include <fcntl.h>
+ #include <errno.h>
+@@ -136,7 +135,6 @@ struct session_list_map {
+ 	struct session_list_item record[1]; /* first record of the session records list */
+ };
+ 
+-static int session_list_fd = -1;
+ static struct session_list_map *session_list = NULL;
+ 
+ /**
+@@ -194,82 +192,35 @@ static struct session_list_map *session_
+ #define SIZE_STEP (1024*16)
+ int nc_session_monitoring_init(void)
+ {
+-	struct stat fdinfo;
+-	int first = 0, c;
+-	size_t size;
+ 	pthread_rwlockattr_t rwlockattr;
+-	mode_t um;
+ 
+ 	if (session_list != NULL) {
+ 		ERROR("%s: session list already exists.", __func__);
+ 		return (EXIT_FAILURE);
+ 	}
+ 
+-	if (session_list_fd != -1) {
+-		close(session_list_fd);
+-	}
+-
+-	um = umask(0000);
+-	session_list_fd = open(SESSIONSFILE_PATH, O_CREAT | O_RDWR, FILE_PERM);
+-	umask(um);
+-	if (session_list_fd == -1) {
+-		ERROR("Opening the sessions monitoring file failed (%s).", strerror(errno));
+-		return (EXIT_FAILURE);
+-	}
+-
+-	/* get the file size */
+-	if (fstat(session_list_fd, &fdinfo) == -1) {
+-		ERROR("Unable to get the sessions monitoring file information (%s)", strerror(errno));
+-		close(session_list_fd);
+-		session_list_fd = -1;
++	session_list = calloc(SIZE_STEP, sizeof(char));
++	if (session_list == NULL) {
++		ERROR("Failed allocating sessions monitoring buffer (%s)", strerror(errno));
+ 		return (EXIT_FAILURE);
+ 	}
+ 
+-	if (fdinfo.st_size == 0) {
+-		/* we have a new file, create some initial size using file gaps */
+-		first = 1;
+-		lseek(session_list_fd, SIZE_STEP - 1, SEEK_SET);
+-		while (((c = write(session_list_fd, "", 1)) == -1) && (errno == EAGAIN || errno == EINTR));
+-		if (c == -1) {
+-			WARN("%s: Preparing the session list file failed (%s).", __func__, strerror(errno));
+-		}
+-		lseek(session_list_fd, 0, SEEK_SET);
+-		size = SIZE_STEP;
+-	} else {
+-		size = fdinfo.st_size;
+-	}
+-
+-	session_list = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, session_list_fd, 0);
+-	if (session_list == MAP_FAILED) {
+-		ERROR("Accessing the shared sessions monitoring file failed (%s)", strerror(errno));
+-		close(session_list_fd);
+-		session_list = NULL;
+-		session_list_fd = -1;
+-		return (EXIT_FAILURE);
+-	}
+-
+-	if (first) {
+-		pthread_rwlockattr_init(&rwlockattr);
+-		pthread_rwlockattr_setpshared(&rwlockattr, PTHREAD_PROCESS_SHARED);
+-		pthread_rwlock_init(&(session_list->lock), &rwlockattr);
+-		pthread_rwlockattr_destroy(&rwlockattr);
+-		pthread_rwlock_wrlock(&(session_list->lock));
+-		session_list->size = SIZE_STEP;
+-		session_list->count = 0;
+-		pthread_rwlock_unlock(&(session_list->lock));
+-	}
++	pthread_rwlockattr_init(&rwlockattr);
++	pthread_rwlockattr_setpshared(&rwlockattr, PTHREAD_PROCESS_SHARED);
++	pthread_rwlock_init(&(session_list->lock), &rwlockattr);
++	pthread_rwlockattr_destroy(&rwlockattr);
++	pthread_rwlock_wrlock(&(session_list->lock));
++	session_list->size = SIZE_STEP;
++	session_list->count = 0;
++	pthread_rwlock_unlock(&(session_list->lock));
+ 
+ 	return (EXIT_SUCCESS);
+ }
+ 
+ void nc_session_monitoring_close(void)
+ {
+-	if (session_list) {
+-		munmap(session_list, session_list->size);
+-		close(session_list_fd);
+-		session_list = NULL;
+-		session_list_fd = -1;
+-	}
++	free(session_list);
++	session_list = NULL;
+ }
+ 
+ int nc_session_is_monitored(const char* session_id)

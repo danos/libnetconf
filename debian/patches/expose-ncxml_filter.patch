@@ -1,0 +1,34 @@
+--- a/src/datastore_xml.h
++++ b/src/datastore_xml.h
+@@ -51,6 +51,20 @@
+ 
+ /**
+  * @ingroup store
++ * @brief apply a filter to a given subtree
++ *
++ * To make this function available, you have to include libnetconf_xml.h.
++ *
++ * @param[in] old The start of the subtree to process
++ * @param[in] filter The filter to run against the subtree
++ * @param[in] new The output node for the filtered subtree
++ * @param[in] data_model The model to match with or NULL
++ * @return EXIT_SUCCESS or EXIT_FAILURE
++ */
++int ncxml_filter(xmlNodePtr old, const struct nc_filter* filter, xmlNodePtr *new, const xmlDocPtr data_model);
++
++/**
++ * @ingroup store
+  * @brief Create a new datastore structure of the specified implementation type with get_state function using libxml2.
+  *
+  * To make this function available, you have to include libnetconf_xml.h.
+--- a/src/datastore.c
++++ b/src/datastore.c
+@@ -5084,7 +5084,7 @@
+ 	return filter_in;
+ }
+ 
+-int ncxml_filter(xmlNodePtr old, const struct nc_filter* filter, xmlNodePtr *new, const xmlDocPtr data_model)
++API int ncxml_filter(xmlNodePtr old, const struct nc_filter* filter, xmlNodePtr *new, const xmlDocPtr data_model)
+ {
+ 	xmlDocPtr result, data_filtered[2] = {NULL, NULL};
+ 	xmlNodePtr filter_item, node;

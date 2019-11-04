@@ -1,0 +1,13 @@
+--- a/configure.in
++++ b/configure.in
+@@ -447,7 +447,9 @@ fi
+ if test "$libssh" = "yes"; then
+ 	### libssh ###
+ 	AC_CHECK_HEADERS([libssh/libssh.h], [], AC_MSG_ERROR([Missing libssh headers.]))
+-	AC_CHECK_LIB([ssh_threads], [ssh_threads_get_pthread], [], AC_MSG_ERROR([Missing the libssh_threads library.]))
++	AC_CHECK_LIB([ssh_threads], [ssh_threads_get_pthread], [], [
++		AC_CHECK_LIB([ssh], [ssh_threads_get_pthread], [], AC_MSG_ERROR([Missing the libssh_threads library.]))
++	])
+ 	CFLAGS="`pkg-config --cflags libssh` $CFLAGS"
+ 	LIBS="`pkg-config --libs libssh` $LIBS"
+ 	BUILDREQS="$BUILDREQS libssh-devel >= 0.6.3"
