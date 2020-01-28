@@ -5,3 +5,4 @@ no_ldconfig_for_you.patch
 callhome_exponential_backoff.patch
 use_memory_for_session_list.patch
 libssh_thread.patch
+cancel-commit.patch

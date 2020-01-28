@@ -1,0 +1,82 @@
+--- a/src/datastore.c
++++ b/src/datastore.c
+@@ -6096,6 +6096,19 @@
+ 			ret = EXIT_RPC_NOT_APPLICABLE;
+ 			break;
+ 		}
++		if (nc_cpblts_enabled (session, NC_CAP_CANDIDATE_ID)) {
++			ret = ds->func.copyconfig (ds, session, rpc, NC_DATASTORE_RUNNING, NC_DATASTORE_CANDIDATE, NULL, &e);
++		} else {
++			e = nc_err_new (NC_ERR_OP_NOT_SUPPORTED);
++			ret = EXIT_FAILURE;
++		}
++		break;
++	case NC_OP_CANCELCOMMIT:
++		if (ds->type == NCDS_TYPE_EMPTY) {
++			/* there is nothing to edit in empty datastore type */
++			ret = EXIT_RPC_NOT_APPLICABLE;
++			break;
++		}
+ 
+ 		if (nc_cpblts_enabled (session, NC_CAP_CANDIDATE_ID)) {
+ 			ret = ds->func.copyconfig (ds, session, rpc, NC_DATASTORE_RUNNING, NC_DATASTORE_CANDIDATE, NULL, &e);
+--- a/src/messages.c
++++ b/src/messages.c
+@@ -477,6 +477,7 @@
+ 	case (NC_OP_UNLOCK):
+ 	case (NC_OP_COMMIT):
+ 	case (NC_OP_DISCARDCHANGES):
++	case (NC_OP_CANCELCOMMIT):
+ 		rpc->type.rpc = NC_RPC_DATASTORE_WRITE;
+ 		break;
+ 	case (NC_OP_CLOSESESSION):
+@@ -748,6 +749,9 @@
+ 		} else if ((xmlStrcmp(auxnode->name, BAD_CAST "discard-changes") == 0) &&
+ 				(xmlStrcmp(auxnode->ns->href, BAD_CAST NC_NS_BASE10) == 0)) {
+ 			rpc->op = NC_OP_DISCARDCHANGES;
++		} else if ((xmlStrcmp(auxnode->name, BAD_CAST "cancel-commit") == 0) &&
++				(xmlStrcmp(auxnode->ns->href, BAD_CAST NC_NS_BASE10) == 0)) {
++			rpc->op = NC_OP_CANCELCOMMIT;
+ 		} else if ((xmlStrcmp(auxnode->name, BAD_CAST "kill-session") == 0) &&
+ 				(xmlStrcmp(auxnode->ns->href, BAD_CAST NC_NS_BASE10) == 0)) {
+ 			rpc->op = NC_OP_KILLSESSION;
+@@ -3501,6 +3505,29 @@
+ 	return (rpc);
+ }
+ 
++API nc_rpc* nc_rpc_cancelcommit(void)
++{
++       nc_rpc *rpc;
++       xmlNodePtr content;
++       xmlNsPtr ns;
++
++       if ((content = xmlNewNode(NULL, BAD_CAST "cancel-commit")) == NULL) {
++               ERROR("xmlNewNode failed: %s (%s:%d).", strerror (errno), __FILE__, __LINE__);
++               return (NULL);
++       }
++       /* set namespace */
++       ns = xmlNewNs(content, (xmlChar *) NC_NS_BASE10, NULL);
++       xmlSetNs(content, ns);
++
++       if ((rpc = (nc_rpc*)nc_msg_create(content, "rpc")) != NULL) {
++               rpc->type.rpc = NC_RPC_DATASTORE_WRITE;
++               rpc->op = NC_OP_CANCELCOMMIT;
++       }
++       xmlFreeNode(content);
++
++       return (rpc);
++}
++
+ API nc_rpc* nc_rpc_discardchanges(void)
+ {
+ 	nc_rpc *rpc;
+--- a/src/netconf.h
++++ b/src/netconf.h
+@@ -189,6 +189,7 @@
+ 	NC_OP_UNLOCK,		/**< \<unlock\> operation */
+ 	NC_OP_COMMIT,		/**< \<commit> operation */
+ 	NC_OP_DISCARDCHANGES,	/**< \<discard-changes> operation */
++	NC_OP_CANCELCOMMIT,	/**< \<cancel-commit> operation */
+ 	NC_OP_CREATESUBSCRIPTION,	/**< \<create-subscription\> operation (RFC 5277) */
+ 	NC_OP_GETSCHEMA,	/**< \<get-schema> operation (RFC 6022) */
+ 	NC_OP_VALIDATE		/**< \<validate\> operation */
