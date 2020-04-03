@@ -1,3 +1,10 @@
+libnetconf (0.10.0-0vyatta7) unstable; urgency=medium
+
+  [ Paul Carson ]
+  * Support <cancel-commit> operation (Closes: VRVDR-32867)
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 03 Apr 2020 12:44:06 +0100
+
 libnetconf (0.10.0-0vyatta6) unstable; urgency=medium
 
   * DANOS Import master
